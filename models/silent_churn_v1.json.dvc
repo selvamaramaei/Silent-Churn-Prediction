@@ -1,0 +1,5 @@
+outs:
+- md5: 131f0430aeb34fff940b217735b53aa4
+  size: 346806
+  hash: md5
+  path: silent_churn_v1.json

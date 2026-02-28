@@ -1,0 +1,20 @@
+# --- Python Ortamı ---
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Veri ve Modeller  ---
+/data/raw/
+/data/processed/
+/models/silent_churn_v1.json
+
+# --- Editör ve Sistem Dosyaları ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
