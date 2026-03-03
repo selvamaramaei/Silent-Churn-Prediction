@@ -1,6 +1,6 @@
 # 📊 Silent Churn Prediction & Monitoring System
 
-##  Proje Hakkında (Executive Summary)
+##  Proje Hakkında 
 
 Bu proje, bir platformun kullanıcı tutundurma (retention) stratejisini güçlendirmek amacıyla, aboneliğini iptal etmeyen ancak kullanım sıklığı veya süresi gizlice azalan (**Silent Churn**) kullanıcıları tespit etmek için geliştirilmiştir.
 
@@ -13,53 +13,40 @@ Geleneksel "açık churn" modellerinden farklı olarak, bu sistem kullanıcılar
 
 ---
 
-##  Proje Mimarisi & Veri Akışı (Architectural Diagram)
+##  Proje Mimarisi & Veri Akışı 
 
 Proje, tam modüler ve ölçeklenebilir bir MLOps yapısına sahiptir. Ham verinin üretiminden son kullanıcının raporu görmesine kadar 4 ana katmandan oluşur.
 
-```mermaid
-graph TD
-    %% -- Data Source & Ingestion --
-    A[data_gen.py Script] -->|Ham Veri Üretimi| B[raw_usage_data.csv]
-    B -->|Ingestion Flow| C(src/db_loader.py)
-    
-    %% -- Database Layer (PostgreSQL) --
-    C -->|Ham Veri Yükleme| D[(PostgreSQL DB)]
-    D -->|SQL Özellik Mühendisliği| D
-    subgraph "Database Schema"
-        raw_usage_data:::table
-        processed_features:::table
-        labeled_features:::table
-    end
-    
-    %% -- Feature Pipeline --
-    D -->|Features & Labels Çekme| E(src/feature_pipeline.py)
-    E -->|Veri Ön İşleme & Labeling| E
-    
-    %% -- Model Training & MLOps --
-    subgraph "Model Development"
-        E -->|labeled_features| F(src/train_xgboots.py)
-        E -->|labeled_features| G(src/train_random_forest.py)
-        F -->|XGBoost Model| H(models/silent_churn_v1.json)
-        G -->|Random Forest Model| I(models/rf_silent_churn_v1.joblib)
-    end
-    H & I -->|Tracking via .dvc| J(DVC Meta Files)
-    
-    %% -- Web Dashboard (Streaming UI) --
-    subgraph "Inference & Visualization"
-        D -->|processed_features| K(dashboard.py - Streamlit)
-        H & I -->|Loading Models| K
-        K -->|Risk Scoring (Inference)| K
-        K -->|UI Components: User Lookup, Distribution, Risk Table| L[User Dashboard (Web UI)]
-    end
-
-    %% --- Styling ---
-    classDef table fill:#e1f5fe,stroke:#01579b,stroke-width:1px,color:#01579b;
-    classDef script fill:#f9fbe7,stroke:#33691e,stroke-width:1px;
-    classDef output fill:#ffecb3,stroke:#ff8f00,stroke-width:1px;
-    classDef ui fill:#e0f2f1,stroke:#00695c,stroke-width:2px;
-    
-    linkStyle default stroke:#666,stroke-width:1px,fill:none;
+```text
+[ VERİ ÜRETİMİ ] --> [ VERİTABANI ] --> [ ÖZELLİK MÜHENDİSLİĞİ ] --> [ MODELLEME ] --> [ İZLEME ]
+      |                  |                      |                       |               |
+ data_generation.py  PostgreSQL DB       feature_pipeline.py      XGBoost & RF     dashboard.py
+ (Ham CSV Üretimi)   (SQL Depolama)      (7d/30d Ortalamalar)     (Eğitim & DVC)   (Risk Analizi)
+   
 ```
 
- 
+## Klasör Yapısı
+
+ Silent-Churn/
+├── data/                    # Ham ve işlenmiş veriler (.dvc ile takip edilir)
+│   ├── processed/           # SQL ingestion sonrası meta veriler
+│   ├── quarantine/          # Kalite kontrolünden geçemeyen hatalı veriler
+│   └── raw/                 # feature_usage.csv ve ham loglar
+├── models/                  # Eğitilmiş model ağırlıkları
+│   ├── rf_silent_churn_v1.joblib  # Random Forest Modeli
+│   ├── silent_churn_v1.json       # XGBoost Modeli
+│   └── *.dvc                # Büyük modellerin versiyon takibi
+├── notebooks/               # Analiz ve EDA çalışmaları
+│   ├── EDA.ipynb            # Keşifçi Veri Analizi
+│   └── Model_Analysis.ipynb # Model Performans Derin Analizi
+├── src/                     # Kaynak Kodlar (Logic Layer)
+│   ├── databases/           # DB Bağlantı: db_loader.py
+│   ├── features/            # Feature Pipeline: feature_pipeline.py
+│   ├── flows/               # Ingestion Flow: ingestion_flow.py
+│   ├── ingestion/           # Üretim: data_generation.py, data_quality.py
+│   ├── labeling/            # Churn Tanımlama: labeler.py
+│   ├── training/            # Eğitim: train_xgboots.py, train_random_forest.py
+│   ├── dashboard.py         # Interaktif Streamlit Dashboard
+│   ├── inference.py         # XGBoost Tahminleme Scripti
+│   └── inference_rf.py      # Random Forest Tahminleme Scripti
+└── .gitignore               # venv ve cache dosyalarının filtrelenmesi
