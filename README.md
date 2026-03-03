@@ -27,6 +27,7 @@ Proje, tam modüler ve ölçeklenebilir bir MLOps yapısına sahiptir. Ham verin
 
 ## Klasör Yapısı
 
+```text
  Silent-Churn/
 ├── data/                    # Ham ve işlenmiş veriler (.dvc ile takip edilir)
 │   ├── processed/           # SQL ingestion sonrası meta veriler
@@ -50,3 +51,15 @@ Proje, tam modüler ve ölçeklenebilir bir MLOps yapısına sahiptir. Ham verin
 │   ├── inference.py         # XGBoost Tahminleme Scripti
 │   └── inference_rf.py      # Random Forest Tahminleme Scripti
 └── .gitignore               # venv ve cache dosyalarının filtrelenmesi
+```
+
+## Model Performans Analizi
+Model eğitiminde aşırı sınıf dengesizliği (%1.84 churn oranı) nedeniyle, modellerin 1 (churn) sınıfına daha fazla ağırlık vermesi (scale_pos_weight/class_weight) sağlanmıştır.
+
+```text
+Metrik (Sınıf 1 - Churn),XGBoost (Threshold 0.85),Random Forest (Threshold 0.50)
+Recall (Duyarlılık),0.71,0.98
+Precision (Kesinlik),0.18,0.12
+F1-Score,0.28,0.21
+```
+
