@@ -18,47 +18,19 @@ Geleneksel "açık churn" modellerinden farklı olarak, bu sistem kullanıcılar
 Proje, tam modüler ve ölçeklenebilir bir MLOps yapısına sahiptir. Ham verinin üretiminden son kullanıcının raporu görmesine kadar 4 ana katmandan oluşur.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#fcfcfc', 'edgeLabelBackground':'#fcfcfc', 'tertiaryColor': '#fcfcfc'}}}%%
 graph TD
-    %% -- Data Source & Ingestion --
-    A[data_gen.py Script] -->|Ham Veri Üretimi| B[raw_usage_data.csv]
-    B -->|Ingestion Flow| C(src/db_loader.py)
-    
-    %% -- Database Layer (PostgreSQL) --
+    A[data_gen.py] -->|Sentetik Veri Üretimi| B[feature_usage.csv]
+    B -->|Ingestion Flow| C(src/databases/db_loader.py)
     C -->|Ham Veri Yükleme| D[(PostgreSQL DB)]
-    D -->|SQL Özellik Mühendisliği| D
-    subgraph "Database Schema"
-        raw_usage_data:::table
-        processed_features:::table
-        labeled_features:::table
+    D -->|SQL Feature Engineering| D
+    subgraph "Modelleme Katmanı"
+        D -->|Feature Set| E(src/training/train_xgboots.py)
+        D -->|Feature Set| F(src/training/train_random_forest.py)
+        E -->|XGBoost| G(models/silent_churn_v1.json)
+        F -->|Random Forest| H(models/rf_silent_churn_v1.joblib)
     end
-    
-    %% -- Feature Pipeline --
-    D -->|Features & Labels Çekme| E(src/feature_pipeline.py)
-    E -->|Veri Ön İşleme & Labeling| E
-    
-    %% -- Model Training & MLOps --
-    subgraph "Model Development"
-        E -->|labeled_features| F(src/train_xgboots.py)
-        E -->|labeled_features| G(src/train_random_forest.py)
-        F -->|XGBoost Model| H(models/silent_churn_v1.json)
-        G -->|Random Forest Model| I(models/rf_silent_churn_v1.joblib)
-    end
-    H & I -->|Tracking via .dvc| J(DVC Meta Files)
-    
-    %% -- Web Dashboard (Streaming UI) --
-    subgraph "Inference & Visualization"
-        D -->|processed_features| K(dashboard.py - Streamlit)
-        H & I -->|Loading Models| K
-        K -->|Risk Scoring (Inference)| K
-        K -->|UI Components: User Lookup, Distribution, Risk Table| L[User Dashboard (Web UI)]
-    end
+    G & H -->|Prediction| I(src/inference.py)
+    I -->|UI Visualization| J[Streamlit Dashboard]
+```
 
-    %% --- Styling ---
-    classDef table fill:#e1f5fe,stroke:#01579b,stroke-width:1px,color:#01579b;
-    classDef script fill:#f9fbe7,stroke:#33691e,stroke-width:1px;
-    classDef output fill:#ffecb3,stroke:#ff8f00,stroke-width:1px;
-    classDef ui fill:#e0f2f1,stroke:#00695c,stroke-width:2px;
-    
-    linkStyle default stroke:#666,stroke-width:1px,fill:none;
  
