@@ -6,7 +6,6 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from src.databases.db_loader import get_engine
-import joblib 
 
 
 
@@ -22,14 +21,17 @@ def train_model():
     X = df[features]
     y = df['target']
 
-    # Train-Test split
+    # Train-Test split - test : %20 , train : %80
     X_train , X_test , y_train , y_test = train_test_split(X,y,test_size=0.2,random_state=42,stratify=y)
 
-    # XGBoost Model
+
+    # scaling weight for class imbalance 
     scale_weight = (len(y_train) - sum(y_train)) / sum(y_train)
 
     print(f"Training XGBoost model with scale_pos_weight : {scale_weight: .2f}")
 
+
+    # XGBoost Model 
     model= xgb.XGBClassifier(
         n_estimators=100,
         max_depth = 6,

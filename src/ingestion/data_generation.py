@@ -26,7 +26,6 @@ def generate_synthetic_usage(accounts_df, feature_usage_df ,start_date_str="2023
         critical_feature = np.random.choice(features)
 
         # 1. individual personality assignment
-        # base daily activity : mean events per dat
         base_lambda = np.random.uniform(2,8)
 
         # 2. Assign random decay parameters per churners
