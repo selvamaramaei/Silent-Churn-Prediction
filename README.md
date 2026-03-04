@@ -149,7 +149,7 @@ python src/training/train_xgboots.py
 
 ---
 
-## 📊 Interactive Dashboard (Streamlit)
+## İnteraktif Dashboard (Streamlit)
 
 Model çıktılarının analiz edilebilmesi için interaktif bir Streamlit dashboard geliştirilmiştir.
 
@@ -166,3 +166,9 @@ Dashboard üzerinde:
 Dashboard, global risk görünümü ile mikro kullanıcı analizi arasında geçiş yapmayı sağlar.
 
 ---
+
+## Dashboard Çalıştırma
+
+```bash
+streamlit run src/dashboard.py
+```
