@@ -64,3 +64,105 @@ Model eğitiminde aşırı sınıf dengesizliği (%1.84 churn oranı) nedeniyle,
 | F1-Score                 | 0.28                     | 0.21                          |
 ```
 
+## Veriseti Mimarisi ve PostgreSQL Entegrasyonu
+Projenin veri katmanı, davranışsal churn sinyallerini yakalayabilmek için tasarlanmış yapısal bir kullanım log mimarisine dayanır.
+
+### Raw Dataset Schema (`feature_usage.csv`)
+
+Her satır bir kullanıcının belirli bir feature ile etkileşimini temsil eder:
+
+| Alan | Açıklama |
+|------|----------|
+| usage_id | Benzersiz kullanım kaydı kimliği |
+| subscription_id | Abonelik kimliği |
+| usage_date | Kullanım tarihi |
+| feature_name | Kullanılan özellik |
+| usage_count | Günlük kullanım sayısı |
+| usage_duration_secs | Toplam kullanım süresi (saniye) |
+| error_count | Oluşan hata sayısı |
+
+Bu yapı, kullanıcı davranışını zaman serisi perspektifinden analiz edebilmek için normalize edilmiştir.
+
+---
+
+### PostgreSQL Feature Engineering Katmanı
+
+Ham veriler PostgreSQL veri tabanına ingest edildikten sonra, abonelik bazlı davranışsal metrikler hesaplanır. Bu katman modelleme sürecinden önce veri zenginleştirme ve özetleme işlemlerini gerçekleştirir.
+
+Hesaplanan temel özellikler:
+
+- **daily_usage**  
+  Aboneliğin ilgili gündeki toplam kullanım hacmi.
+
+- **usage_7d_avg**  
+  Son 7 günün hareketli ortalama kullanım değeri (kısa vadeli trend göstergesi).
+
+- **usage_30d_avg**  
+  Son 30 günün hareketli ortalama kullanım değeri (uzun vadeli davranış baz çizgisi).
+
+- **usage_drop_rate**  
+  `usage_7d_avg / usage_30d_avg` oranı.  
+  Bu oran düştükçe kullanıcının platformdan davranışsal olarak uzaklaşma riski artar.
+
+Bu yaklaşım, açık churn (abonelik iptali) yerine kullanım davranışındaki düşüşü analiz ederek erken risk tespiti yapmayı hedefler.
+
+---
+
+##  MLOps: DVC (Data Version Control)
+
+Bu projede büyük veri dosyaları ve model ağırlıkları doğrudan Git deposunda tutulmamaktadır. Bunun yerine **DVC (Data Version Control)** kullanılarak versiyonlanmaktadır.
+
+### Versiyonlama Stratejisi
+
+- Her model eğitimi sonrası:
+  - Kullanılan veri seti snapshot olarak kaydedilir
+  - Eğitilen model dosyası DVC ile takip altına alınır
+  - `.dvc` referans dosyası oluşturulur
+
+- GitHub repository:
+  - Yalnızca referans dosyalarını içerir
+  - Büyük veri ve model dosyaları DVC storage üzerinde saklanır
+
+### Sağlanan Avantajlar
+
+- Reproducible model eğitimi
+- Deneylerin karşılaştırılabilirliği
+- Hafif ve temiz Git repository yapısı
+- Production ortamına uygun veri yönetimi
+
+---
+##  Kurulum
+
+```bash
+git clone https://github.com/username/Silent-Churn.git
+cd Silent-Churn
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+## Model Eğitimi
+
+```bash
+python src/training/train_xgboots.py
+```
+
+---
+
+## 📊 Interactive Dashboard (Streamlit)
+
+Model çıktılarının analiz edilebilmesi için interaktif bir Streamlit dashboard geliştirilmiştir.
+
+Dashboard üzerinde:
+
+- **Model seçimi** (XGBoost / Random Forest)
+- **Risk threshold ayarı**
+- **Analiz edilecek kullanıcı sayısı belirleme**
+- **Risk score dağılımı histogramı (log scale)**
+- **High-risk kullanıcı listesi**
+- **Account ID ile bireysel kullanıcı arama**
+- **Kullanıcı bazlı usage_drop_rate trend grafiği**
+
+Dashboard, global risk görünümü ile mikro kullanıcı analizi arasında geçiş yapmayı sağlar.
+
+---
